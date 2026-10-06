@@ -1,0 +1,20 @@
+# Virtual Environments
+venv/
+env/
+opt/_kd/_env/
+*.env
+
+# Python Cache & Logs
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# Large Weights, Models & Archives
+*.bin
+*.pt
+*.safetensors
+*.zip
+*.tar.gz
+distilled_lora_adapter/
+distilled_lora_adapter.zip
