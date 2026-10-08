@@ -1,0 +1,121 @@
+{
+  "A1: OPT-125m (Token-KD)": {
+    "DollyEval": {
+      "ppl": 28.537872131239407,
+      "rouge_l": 0.1379799882716352,
+      "avg_len": 60.0
+    },
+    "SelfInst": {
+      "ppl": 41.883883058858075,
+      "rouge_l": 0.07095927404428923,
+      "avg_len": 60.0
+    },
+    "VicunaEval": {
+      "ppl": 47.09595999273714,
+      "rouge_l": null,
+      "avg_len": 60.0
+    }
+  },
+  "A2: GPT-2 (Seq-KD)": {
+    "DollyEval": {
+      "ppl": 38.095085333527415,
+      "rouge_l": 0.09576404879622083,
+      "avg_len": 60.0
+    },
+    "SelfInst": {
+      "ppl": 54.19732218040045,
+      "rouge_l": 0.05586746041260251,
+      "avg_len": 60.0
+    },
+    "VicunaEval": {
+      "ppl": 45.487209190700746,
+      "rouge_l": null,
+      "avg_len": 60.0
+    }
+  },
+  "A3: DistilGPT2 (Seq-KD)": {
+    "DollyEval": {
+      "ppl": 48.77504325641306,
+      "rouge_l": 0.10344489329144568,
+      "avg_len": 60.0
+    },
+    "SelfInst": {
+      "ppl": 66.11824071836273,
+      "rouge_l": 0.04589129294358591,
+      "avg_len": 60.0
+    },
+    "VicunaEval": {
+      "ppl": 61.684524652005805,
+      "rouge_l": null,
+      "avg_len": 60.0
+    }
+  },
+  "A4: Pythia-70m (Seq-KD)": {
+    "DollyEval": {
+      "ppl": 56.03765206027603,
+      "rouge_l": 0.06593737019879412,
+      "avg_len": 60.0
+    },
+    "SelfInst": {
+      "ppl": 63.672411059261094,
+      "rouge_l": 0.04677937087265076,
+      "avg_len": 60.0
+    },
+    "VicunaEval": {
+      "ppl": 85.13559588570081,
+      "rouge_l": null,
+      "avg_len": 60.0
+    }
+  },
+  "A5: Pythia-160m (Seq-KD)": {
+    "DollyEval": {
+      "ppl": 31.954629400046205,
+      "rouge_l": 0.07999236122850979,
+      "avg_len": 60.0
+    },
+    "SelfInst": {
+      "ppl": 39.44307050890803,
+      "rouge_l": 0.057424944917910614,
+      "avg_len": 60.0
+    },
+    "VicunaEval": {
+      "ppl": 43.73872068088467,
+      "rouge_l": null,
+      "avg_len": 60.0
+    }
+  },
+  "B1: OPT-125m + OPT-350m Teacher": {
+    "DollyEval": {
+      "ppl": 28.537872131239407,
+      "rouge_l": 0.1379799882716352,
+      "avg_len": 60.0
+    },
+    "SelfInst": {
+      "ppl": 41.883883058858075,
+      "rouge_l": 0.07095927404428923,
+      "avg_len": 60.0
+    },
+    "VicunaEval": {
+      "ppl": 47.09595999273714,
+      "rouge_l": null,
+      "avg_len": 60.0
+    }
+  },
+  "B2: OPT-125m + GPT2-Med Teacher": {
+    "DollyEval": {
+      "ppl": 30.209972253395232,
+      "rouge_l": 0.12646856410091017,
+      "avg_len": 60.0
+    },
+    "SelfInst": {
+      "ppl": 43.38941577292678,
+      "rouge_l": 0.06711706908716539,
+      "avg_len": 60.0
+    },
+    "VicunaEval": {
+      "ppl": 44.95327891990495,
+      "rouge_l": null,
+      "avg_len": 60.0
+    }
+  }
+}

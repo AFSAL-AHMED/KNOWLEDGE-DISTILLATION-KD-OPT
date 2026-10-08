@@ -1,0 +1,18 @@
+{
+  "1A. OPT-125m <- OPT-350m (In-Family)": {
+    "ppl": 1.6654412035277082,
+    "type": "In-Family"
+  },
+  "1B. OPT-125m <- Pythia-160m (Cross-Family)": {
+    "ppl": 1.29996089449645,
+    "type": "Cross-Family"
+  },
+  "2A. Pythia-70m <- Pythia-160m (In-Family)": {
+    "ppl": 3.8959977269911086,
+    "type": "In-Family"
+  },
+  "2B. Pythia-70m <- OPT-350m (Cross-Family)": {
+    "ppl": 2.4531524268570717,
+    "type": "Cross-Family"
+  }
+}

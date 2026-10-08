@@ -102,15 +102,17 @@ OPT_TEACHER   = "facebook/opt-350m"   # Primary teacher (~350M, OPT family)
 GPT2_TEACHER  = "gpt2-medium"         # Alternate teacher (~345M, GPT-2 family)
 OPT_STUDENT   = "facebook/opt-125m"   # Primary student (OPT, same family as teacher)
 GPT2_STUDENT  = "gpt2"               # Alternate student (~117M, GPT-2 family)
-DGPT2_STUDENT = "distilgpt2"         # Smallest student (~82M, distilled GPT-2)
+DGPT2_STUDENT = "distilbert/distilgpt2" # Smallest student (~82M, distilled GPT-2)
+PYTHIA70_STUDENT  = "EleutherAI/pythia-70m"   # Ultra-compact student (~70M, NeoX family)
+PYTHIA160_STUDENT = "EleutherAI/pythia-160m"  # Compact student (~160M, NeoX family)
 
 # --- LoRA target modules per architecture ---
 # OPT: standard linear projections in attention + FFN blocks
-OPT_LORA_TARGETS  = ["q_proj", "k_proj", "v_proj", "out_proj", "fc1", "fc2"]
+OPT_LORA_TARGETS    = ["q_proj", "k_proj", "v_proj", "out_proj", "fc1", "fc2"]
 # GPT-2: Conv1D layers (PEFT handles Conv1D transparently since v0.3)
-#   c_attn : combined Q, K, V projection
-#   c_proj  : output projection of attention and MLP
-GPT2_LORA_TARGETS = ["c_attn", "c_proj"]
+GPT2_LORA_TARGETS   = ["c_attn", "c_proj"]
+# Pythia / GPT-NeoX: attention and MLP linear projections
+PYTHIA_LORA_TARGETS = ["query_key_value", "dense"]
 
 # --- LoRA dimensions (smaller r for speed on CPU) ---
 LORA_R     = 16    # Low-rank bottleneck (r=16 -> ~1-2% trainable)
@@ -797,7 +799,42 @@ a3_res = evaluate_all(a3_model, a3_tok, "A3-DistilGPT2",
                       dolly_data, selfinst_data, vicuna_data, device)
 ALL_RESULTS["A3: DistilGPT2 (Seq-KD)"] = a3_res
 
-del a3_model, opt_corpus
+del a3_model
+if device.type == "cuda": torch.cuda.empty_cache()
+
+
+# ---- A4: Pythia-70m  (sequence-level KD - ultra compact student) -----------
+print("\n  --- A4: Pythia-70m Student + Sequence-level KD ---")
+print("  [RATIONALE] Pythia-70m (EleutherAI, 70M) tests an alternate architecture family (GPT-NeoX).")
+print("              Uses Seq-KD from OPT-350m teacher. Tests lower parameter bound.")
+
+a4_model, a4_tok = build_lora_student(PYTHIA70_STUDENT, PYTHIA_LORA_TARGETS, device)
+train_seq_kd(a4_model, a4_tok, opt_corpus, device, "A4 Pythia-70m Seq-KD")
+
+print(f"\n  [A4] Evaluating on benchmarks ...")
+a4_res = evaluate_all(a4_model, a4_tok, "A4-Pythia70m",
+                      dolly_data, selfinst_data, vicuna_data, device)
+ALL_RESULTS["A4: Pythia-70m (Seq-KD)"] = a4_res
+
+del a4_model
+if device.type == "cuda": torch.cuda.empty_cache()
+
+
+# ---- A5: Pythia-160m (sequence-level KD - alternative 160M student) ---------
+print("\n  --- A5: Pythia-160m Student + Sequence-level KD ---")
+print("  [RATIONALE] Pythia-160m (160M) is comparable in scale to OPT-125m.")
+print("              Because it is cross-arch, it only gets hard Seq-KD targets,")
+print("              demonstrating why OPT-125m's in-family Token-KD soft distillation wins.")
+
+a5_model, a5_tok = build_lora_student(PYTHIA160_STUDENT, PYTHIA_LORA_TARGETS, device)
+train_seq_kd(a5_model, a5_tok, opt_corpus, device, "A5 Pythia-160m Seq-KD")
+
+print(f"\n  [A5] Evaluating on benchmarks ...")
+a5_res = evaluate_all(a5_model, a5_tok, "A5-Pythia160m",
+                      dolly_data, selfinst_data, vicuna_data, device)
+ALL_RESULTS["A5: Pythia-160m (Seq-KD)"] = a5_res
+
+del a5_model, opt_corpus
 if device.type == "cuda": torch.cuda.empty_cache()
 
 
@@ -927,6 +964,10 @@ rows = [
      "Cross-arch: seq-level only valid method"),
     ("A3", "DistilGPT2+LoRA", "OPT-350m",    "Sequence-level KD",
      "Smallest student: tests compression limit"),
+    ("A4", "Pythia-70m+LoRA", "OPT-350m",    "Sequence-level KD",
+     "NeoX family (70M): ultra-compact cross-arch"),
+    ("A5", "Pythia-160m+LoRA","OPT-350m",    "Sequence-level KD",
+     "NeoX family (160M): shows soft-KD advantage of OPT"),
     ("B1", "OPT-125m+LoRA",   "OPT-350m",    "Token-level Reverse KD",
      "Same as A1 (baseline for Exp B)"),
     ("B2", "OPT-125m+LoRA",   "GPT-2-medium","Sequence-level KD",
@@ -940,3 +981,35 @@ for row in rows:
 print("\n" + "=" * 75)
 print("  COMPARISON EXPERIMENT COMPLETE")
 print("=" * 75 + "\n")
+
+# =============================================================================
+#  SECTION 15 -- SAVE PRESENTATION-READY REPORTS & EXPORTS
+# =============================================================================
+
+# 1. JSON Export
+try:
+    with open("results_comparison.json", "w", encoding="utf-8") as f:
+        json.dump(ALL_RESULTS, f, indent=2)
+    print("[EXPORT] Saved machine-readable results -> results_comparison.json")
+except Exception as e:
+    print(f"[WARN] Failed to write JSON: {e}")
+
+# 2. Markdown Report Export
+try:
+    with open("results_summary.md", "w", encoding="utf-8") as f:
+        f.write("# Knowledge Distillation Benchmark & Model Comparison Report\n\n")
+        f.write("Generated on: 2026-10-06\n\n")
+        f.write("### Benchmark Performance Across Evaluated Models\n\n")
+        f.write("| Model Configuration | DollyEval PPL | SelfInst PPL | VicunaEval PPL | Avg PPL | Avg ROUGE-L | Rank |\n")
+        f.write("| :--- | :---: | :---: | :---: | :---: | :---: | :---: |\n")
+        for rank, (label, avg_ppl, avg_rouge) in enumerate(rankings, 1):
+            dolly_ppl = ALL_RESULTS.get(label, {}).get("DollyEval", {}).get("ppl", float("nan"))
+            selfinst_ppl = ALL_RESULTS.get(label, {}).get("SelfInst", {}).get("ppl", float("nan"))
+            vicuna_ppl = ALL_RESULTS.get(label, {}).get("VicunaEval", {}).get("ppl", float("nan"))
+            r_str = f"{avg_rouge:.4f}" if avg_rouge is not None else "N/A"
+            badge = " **(BEST)**" if rank == 1 else ""
+            f.write(f"| **{label}**{badge} | {dolly_ppl:.2f} | {selfinst_ppl:.2f} | {vicuna_ppl:.2f} | **{avg_ppl:.2f}** | **{r_str}** | #{rank} |\n")
+        f.write("\n\n*Note: Lower PPL indicates higher model prediction confidence; higher ROUGE-L indicates closer agreement with ground-truth references.*\n")
+    print("[EXPORT] Saved markdown presentation summary -> results_summary.md")
+except Exception as e:
+    print(f"[WARN] Failed to write Markdown: {e}")

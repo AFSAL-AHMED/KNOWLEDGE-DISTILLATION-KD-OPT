@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Knowledge Distillation & LoRA Interactive Explainer</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --card-border: #30363d;
+      --accent: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-orange: #d29922;
+      --accent-red: #f85149;
+      --text: #c9d1d9;
+      --text-bright: #ffffff;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.6;
+      padding: 30px 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 40px; }
+    header h1 {
+      color: var(--text-bright);
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #58a6ff, #bc8cff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    header p { font-size: 1.1rem; color: #8b949e; }
+    
+    .interactive-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .card h2 {
+      font-size: 1.3rem;
+      color: var(--text-bright);
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-blue { background: rgba(88, 166, 255, 0.2); color: var(--accent); }
+    .badge-green { background: rgba(63, 185, 80, 0.2); color: var(--accent-green); }
+    .badge-orange { background: rgba(210, 153, 34, 0.2); color: var(--accent-orange); }
+
+    /* Interactive Pipeline */
+    .pipeline-view {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .step-box {
+      background: #21262d;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .step-box:hover, .step-box.active {
+      border-color: var(--accent);
+      background: #262c36;
+      transform: translateY(-2px);
+    }
+    .step-title {
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-bottom: 5px;
+    }
+    .step-desc { font-size: 0.9rem; color: #8b949e; }
+
+    /* Interactive Simulation */
+    .slider-group { margin: 20px 0; }
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+    .distribution-bars {
+      display: flex;
+      align-items: flex-end;
+      height: 180px;
+      gap: 12px;
+      background: #0d1117;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      margin-top: 15px;
+    }
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .bar {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.3s ease;
+    }
+    .bar-teacher { background: #58a6ff; }
+    .bar-student { background: #3fb950; }
+    .bar-label { font-size: 0.75rem; margin-top: 6px; color: #8b949e; }
+
+    /* External Links Grid */
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .ext-link-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 18px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+      display: block;
+    }
+    .ext-link-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+    .ext-link-card h3 { color: var(--accent); font-size: 1.1rem; margin-bottom: 6px; }
+    .ext-link-card p { font-size: 0.85rem; color: #8b949e; }
+
+    .formula-box {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      color: #79c0ff;
+      font-size: 0.9rem;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Knowledge Distillation & LoRA Interactive Explainer</h1>
+    <p>Visualizing MiniLLM Reverse-KL, Parameter-Efficient Adaptation, and Tokenizer Boundaries</p>
+  </header>
+
+  <div class="interactive-grid">
+    
+    <!-- Card 1: Interactive Pipeline Steps -->
+    <div class="card">
+      <h2><span>⚡</span> Pipeline Flow <span class="badge badge-blue">Interactive</span></h2>
+      <div class="pipeline-view">
+        <div class="step-box active" onclick="showStep(1)">
+          <div class="step-title">1. Tokenization & Data Stream</div>
+          <div class="step-desc">Input prompts from WikiText-2 & PubMedQA pass through shared BPE tokenizer (50,272 tokens).</div>
+        </div>
+        <div class="step-box" onclick="showStep(2)">
+          <div class="step-title">2. Teacher Forward Pass (OPT-350m)</div>
+          <div class="step-desc">Frozen 350M teacher computes dense output probability distributions (dark knowledge) over full vocabulary.</div>
+        </div>
+        <div class="step-box" onclick="showStep(3)">
+          <div class="step-title">3. LoRA Student Forward (OPT-125m)</div>
+          <div class="step-desc">Only low-rank matrices A & B (rank r=16) are active. Over 98% base model weights remain frozen.</div>
+        </div>
+        <div class="step-box" onclick="showStep(4)">
+          <div class="step-title">4. MiniLLM Reverse-KL Loss</div>
+          <div class="step-desc">Mode-seeking objective aligns student peaks to teacher peaks, preventing hallucination.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Interactive Temperature & Mode Simulation -->
+    <div class="card">
+      <h2><span>🎯</span> Reverse-KL Mode Alignment <span class="badge badge-green">Live Demo</span></h2>
+      <p style="font-size: 0.9rem; color: #8b949e;">Adjust Temperature <code>T</code> to observe how the student sharpens around teacher dominant tokens:</p>
+      
+      <div class="slider-group">
+        <label>
+          <span>Softening Temperature (T)</span>
+          <span id="temp-val" style="color: var(--accent);">2.0</span>
+        </label>
+        <input type="range" id="temp-slider" min="0.5" max="5.0" step="0.1" value="2.0" oninput="updateBars(this.value)">
+      </div>
+
+      <div class="formula-box">
+        L_total = α·L_CE + (1-α)·T²·KL(P_student || P_teacher)
+      </div>
+
+      <div class="distribution-bars">
+        <div class="bar-col">
+          <div class="bar bar-teacher" id="t-bar-1" style="height: 85%;"></div>
+          <div class="bar bar-student" id="s-bar-1" style="height: 80%; margin-top: 4px;"></div>
+          <div class="bar-label">Token A</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar bar-teacher" id="t-bar-2" style="height: 12%;"></div>
+          <div class="bar bar-student" id="s-bar-2" style="height: 15%; margin-top: 4px;"></div>
+          <div class="bar-label">Token B</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar bar-teacher" id="t-bar-3" style="height: 3%;"></div>
+          <div class="bar-label">Rare/Noise</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 15px; margin-top: 10px; font-size: 0.8rem; justify-content: center;">
+        <span style="color: #58a6ff;">■ Teacher (OPT-350m)</span>
+        <span style="color: #3fb950;">■ Student (OPT-125m + LoRA)</span>
+      </div>
+    </div>
+
+  </div>
+
+  <h2 style="color: var(--text-bright); margin-bottom: 20px;">🌐 External Interactive Visualizers & Benchmarks</h2>
+  <div class="links-grid">
+    <a href="https://poloclub.github.io/transformer-explainer/" target="_blank" class="ext-link-card">
+      <h3>Transformer Explainer ↗</h3>
+      <p>Interactive web visualizer by Georgia Tech running a live GPT-2 transformer in browser with attention map inspection.</p>
+    </a>
+
+    <a href="https://bbycroft.net/llm" target="_blank" class="ext-link-card">
+      <h3>LLM 3D Visualizer ↗</h3>
+      <p>Full 3D visualization showing vector matrix multiplications, MLP feedforwards, and layer normalization steps in real time.</p>
+    </a>
+
+    <a href="https://tiktokenizer.vercel.app/" target="_blank" class="ext-link-card">
+      <h3>Tiktokenizer ↗</h3>
+      <p>Interactive token boundary visualizer comparing how BPE tokenizers split subwords across different model families.</p>
+    </a>
+
+    <a href="https://ragplayground.com/" target="_blank" class="ext-link-card">
+      <h3>RAG Playground ↗</h3>
+      <p>Interactive sandbox demonstrating document chunking, embedding generation, semantic retrieval, and augmented answers.</p>
+    </a>
+
+    <a href="https://huggingface.co/facebook/opt-125m" target="_blank" class="ext-link-card">
+      <h3>Meta OPT-125m Model Hub ↗</h3>
+      <p>Official Hugging Face repository for the Open Pre-trained Transformer 125M student base architecture.</p>
+    </a>
+
+    <a href="https://github.com/microsoft/MiniLLM" target="_blank" class="ext-link-card">
+      <h3>Microsoft MiniLLM Repository ↗</h3>
+      <p>Official implementation of On-Policy Reverse-KL Knowledge Distillation for Large Language Models.</p>
+    </a>
+  </div>
+</div>
+
+<script>
+  function updateBars(t) {
+    document.getElementById('temp-val').innerText = parseFloat(t).toFixed(1);
+    // Soften or sharpen token probabilities based on temperature
+    let sharp = 1.0 / t;
+    let h1 = Math.min(95, Math.max(30, 85 * sharp));
+    let h2 = Math.min(45, Math.max(5, 15 / sharp));
+    document.getElementById('s-bar-1').style.height = h1 + '%';
+    document.getElementById('s-bar-2').style.height = h2 + '%';
+  }
+
+  function showStep(n) {
+    let boxes = document.querySelectorAll('.step-box');
+    boxes.forEach((b, idx) => {
+      b.classList.toggle('active', idx === n - 1);
+    });
+  }
+</script>
+</body>
+</html>

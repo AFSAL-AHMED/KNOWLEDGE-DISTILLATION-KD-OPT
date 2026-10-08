@@ -23,3 +23,7 @@ Write-Host "`n[INFO] Ensuring rouge-score is installed ..." -ForegroundColor Yel
 
 Write-Host "`n[INFO] Launching compare.py ...`n" -ForegroundColor Green
 & $PYTHON compare.py
+
+Write-Host "`n[INFO] Generating presentation charts ...`n" -ForegroundColor Cyan
+& $PYTHON plot_results.py
+
