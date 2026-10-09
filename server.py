@@ -66,6 +66,16 @@ def get_model_and_tokenizer(model_key):
         tok = AutoTokenizer.from_pretrained(base_name, use_fast=False)
         if tok.pad_token is None: tok.pad_token = tok.eos_token
         mdl = AutoModelForCausalLM.from_pretrained(base_name, torch_dtype=torch.float32).to(device)
+    elif model_key == "teacher_opt350":
+        base_name = "facebook/opt-350m"
+        tok = AutoTokenizer.from_pretrained(base_name, use_fast=False)
+        if tok.pad_token is None: tok.pad_token = tok.eos_token
+        mdl = AutoModelForCausalLM.from_pretrained(base_name, torch_dtype=torch.float32).to(device)
+    elif model_key == "teacher_pythia160":
+        base_name = "EleutherAI/pythia-160m"
+        tok = AutoTokenizer.from_pretrained(base_name, use_fast=False)
+        if tok.pad_token is None: tok.pad_token = tok.eos_token
+        mdl = AutoModelForCausalLM.from_pretrained(base_name, torch_dtype=torch.float32).to(device)
     else:
         raise ValueError(f"Unknown model key: {model_key}")
 
@@ -259,11 +269,19 @@ HTML_PAGE = """<!DOCTYPE html>
         
         <label style="font-size: 0.85rem; color: #9ca3af; margin-bottom: 6px; display: block;">Select Model to Query:</label>
         <select id="modelSelect">
-          <option value="distilled_opt" selected>⭐ OPT-125m + LoRA (Our Distilled Model - MiniLLM)</option>
-          <option value="raw_opt">OPT-125m Base (Zero-Shot, Undistilled)</option>
-          <option value="gpt2">GPT-2 Base (117M Competitor)</option>
-          <option value="distilgpt2">DistilGPT-2 (82M Compressed Competitor)</option>
-          <option value="pythia70">Pythia-70m (70M NeoX Architecture)</option>
+          <optgroup label="🎓 Teacher Models (Knowledge Providers)">
+            <option value="teacher_opt350">OPT-350m Teacher (facebook/opt-350m — 350M Params)</option>
+            <option value="teacher_pythia160">Pythia-160m Teacher (EleutherAI/pythia-160m — 160M Params)</option>
+          </optgroup>
+          <optgroup label="⭐ Distilled Student Models">
+            <option value="distilled_opt" selected>OPT-125m + LoRA (Our Distilled Student — Reverse-KL MiniLLM)</option>
+          </optgroup>
+          <optgroup label="🎒 Un-Distilled Students & Baselines">
+            <option value="raw_opt">OPT-125m Base (Zero-Shot, Undistilled Student)</option>
+            <option value="pythia70">Pythia-70m (EleutherAI Student Architecture)</option>
+            <option value="gpt2">GPT-2 Base (124M Competitor Baseline)</option>
+            <option value="distilgpt2">DistilGPT-2 (82M Distilled Competitor)</option>
+          </optgroup>
         </select>
 
         <div class="sample-prompts">
