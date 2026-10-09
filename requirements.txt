@@ -1,8 +1,8 @@
 # MiniLLM Knowledge Distillation -- Core Dependencies
 # Install with:  pip install -r requirements.txt
 
-# Deep learning core framework (with CUDA 13.2 support for NVIDIA GeForce RTX 50-series)
-torch>=2.15.0
+# Deep learning core framework
+torch>=2.0.0
 
 # HuggingFace ecosystem & PEFT
 transformers>=4.38.0        # AutoTokenizer, AutoModelForCausalLM, OPT models
